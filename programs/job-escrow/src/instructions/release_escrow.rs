@@ -39,30 +39,44 @@ pub struct ReleaseEscrow<'info> {
 }
 
 pub fn handler(ctx: Context<ReleaseEscrow>) -> Result<()> {
-    let escrow = &mut ctx.accounts.escrow;
-    require!(escrow.status == EscrowStatus::Funded, EscrowError::NotFunded);
+    require!(
+        ctx.accounts.escrow.status == EscrowStatus::Funded,
+        EscrowError::NotFunded
+    );
+
+    // Snapshot fields *before* taking the AccountInfo handles, so we don't
+    // hold an `&mut Account` across an immutable borrow.
+    let job_id = ctx.accounts.escrow.job_id;
+    let bump = ctx.accounts.escrow.bump;
+    let amount = ctx.accounts.escrow.amount;
+    let decimals = ctx.accounts.mint.decimals;
+
+    let escrow_ai = ctx.accounts.escrow.to_account_info();
+    let vault_ai = ctx.accounts.vault.to_account_info();
+    let provider_ata_ai = ctx.accounts.provider_token_account.to_account_info();
+    let mint_ai = ctx.accounts.mint.to_account_info();
+    let token_program_ai = ctx.accounts.token_program.to_account_info();
+
+    let signer_seeds: &[&[&[u8]]] = &[&[b"escrow", job_id.as_ref(), &[bump]]];
+    transfer_checked(
+        CpiContext::new_with_signer(
+            token_program_ai,
+            TransferChecked {
+                from: vault_ai,
+                to: provider_ata_ai,
+                authority: escrow_ai,
+                mint: mint_ai,
+            },
+            signer_seeds,
+        ),
+        amount,
+        decimals,
+    )?;
 
     let clock = Clock::get()?;
+    let escrow = &mut ctx.accounts.escrow;
     escrow.status = EscrowStatus::Released;
     escrow.released_at = clock.unix_timestamp;
-
-    // Transfer from vault to provider using escrow PDA as signer
-    let job_id = escrow.job_id;
-    let bump = escrow.bump;
-    let signer_seeds: &[&[&[u8]]] = &[&[b"escrow", job_id.as_ref(), &[bump]]];
-
-    let cpi_accounts = TransferChecked {
-        from: ctx.accounts.vault.to_account_info(),
-        to: ctx.accounts.provider_token_account.to_account_info(),
-        authority: ctx.accounts.escrow.to_account_info(),
-        mint: ctx.accounts.mint.to_account_info(),
-    };
-    let cpi_program = ctx.accounts.token_program.to_account_info();
-    transfer_checked(
-        CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds),
-        escrow.amount,
-        ctx.accounts.mint.decimals,
-    )?;
 
     msg!("Escrow released for job: {:?}", job_id);
     Ok(())

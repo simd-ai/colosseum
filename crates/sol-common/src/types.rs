@@ -135,6 +135,17 @@ pub struct RegisterProviderRequest {
     pub gpu_class: String,
     pub gpu_count: i16,
     pub max_scu_per_epoch: i64,
+    /// On-chain `register_provider` signature. Set by the agent after it
+    /// submits the transaction itself; the scheduler stores it as
+    /// `providers.onchain_tx`.
+    #[serde(default)]
+    pub onchain_tx: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttachEscrowTxRequest {
+    /// On-chain `create_escrow` signature, submitted by the client.
+    pub escrow_tx: String,
 }
 
 // ─── Verification ───────────────────────────────────────────────────

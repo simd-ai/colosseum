@@ -1,10 +1,15 @@
 use ed25519_dalek::{Signer, SigningKey, Verifier, VerifyingKey, Signature};
 use sha2::{Sha256, Digest};
-use rand::rngs::OsRng;
+use rand::RngCore;
 
-/// Generate a new Ed25519 keypair.
+/// Generate a new Ed25519 keypair using OsRng for entropy.
+///
+/// ed25519-dalek 2.2 removed the rand_core impl-based `generate(&mut rng)`
+/// helper, so we fill 32 random bytes directly and feed them in.
 pub fn generate_keypair() -> (SigningKey, VerifyingKey) {
-    let signing_key = SigningKey::generate(&mut OsRng);
+    let mut secret = [0u8; 32];
+    rand::rngs::OsRng.fill_bytes(&mut secret);
+    let signing_key = SigningKey::from_bytes(&secret);
     let verifying_key = signing_key.verifying_key();
     (signing_key, verifying_key)
 }

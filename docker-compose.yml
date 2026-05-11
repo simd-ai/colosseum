@@ -76,7 +76,14 @@ services:
       DATABASE_URL: postgres://solgrid:solgrid@postgres:5432/solgrid
       REDIS_URL: redis://redis:6379
       SOLANA_RPC_URL: https://api.devnet.solana.com
+      VERIFIER_KEYPAIR_PATH: /data/verifier-keypair.json
+      PROVIDER_REGISTRY_PROGRAM_ID: ${PROVIDER_REGISTRY_PROGRAM_ID:-Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS}
+      JOB_ESCROW_PROGRAM_ID: ${JOB_ESCROW_PROGRAM_ID:-HmbTLCmaGtYhSsT3D2RzKFkN3CKqZbHN4KxrFEhMccgH}
+      COMPUTE_RECEIPTS_PROGRAM_ID: ${COMPUTE_RECEIPTS_PROGRAM_ID:-9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM}
+      GRID_TOKEN_MINT: ${GRID_TOKEN_MINT:-11111111111111111111111111111111}
       RUST_LOG: sol_relayer=debug
+    volumes:
+      - ./data:/data:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,7 +98,14 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       SCHEDULER_URL: http://scheduler:8080
+      SOLANA_RPC_URL: https://api.devnet.solana.com
+      AGENT_KEYPAIR_PATH: /data/agent-keypair.json
+      PROVIDER_REGISTRY_PROGRAM_ID: ${PROVIDER_REGISTRY_PROGRAM_ID:-Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS}
+      JOB_ESCROW_PROGRAM_ID: ${JOB_ESCROW_PROGRAM_ID:-HmbTLCmaGtYhSsT3D2RzKFkN3CKqZbHN4KxrFEhMccgH}
+      COMPUTE_RECEIPTS_PROGRAM_ID: ${COMPUTE_RECEIPTS_PROGRAM_ID:-9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM}
       RUST_LOG: sol_agent=debug
+    volumes:
+      - ./data:/data
     depends_on:
       - scheduler
       - redis

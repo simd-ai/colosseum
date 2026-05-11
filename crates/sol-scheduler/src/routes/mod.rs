@@ -20,6 +20,7 @@ pub fn job_routes() -> Router<Arc<AppState>> {
         .route("/api/v1/jobs", get(handlers::jobs::list_jobs))
         .route("/api/v1/jobs/{id}", get(handlers::jobs::get_job))
         .route("/api/v1/jobs/{id}/assign", post(handlers::jobs::assign_job))
+        .route("/api/v1/jobs/{id}/escrow", post(handlers::jobs::attach_escrow_tx))
 }
 
 pub fn receipt_routes() -> Router<Arc<AppState>> {

@@ -3,8 +3,6 @@ use rand::Rng;
 /// Simulate a CFD compute workload by sleeping for a random duration.
 /// Returns the simulated execution duration in seconds.
 pub async fn simulate_compute(gpu_class: &str, max_duration: u32) -> u32 {
-    let mut rng = rand::thread_rng();
-
     // Duration varies by GPU class (faster GPUs = shorter sim)
     let (min_sec, max_sec) = match gpu_class {
         "H100" => (3, (max_duration / 2).max(5)),
@@ -13,7 +11,11 @@ pub async fn simulate_compute(gpu_class: &str, max_duration: u32) -> u32 {
         _      => (5, max_duration.max(10)),
     };
 
-    let duration = rng.gen_range(min_sec..=max_sec.min(max_duration));
+    // ThreadRng is !Send, so scope it tightly before the first .await.
+    let duration = {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(min_sec..=max_sec.min(max_duration))
+    };
 
     tracing::info!(
         "⚙️  Simulating {} compute for {}s...",

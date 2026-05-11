@@ -1,0 +1,15 @@
+[package]
+name = "sol-onchain"
+version = "0.1.0"
+edition = "2021"
+description = "SolGrid on-chain helpers: PDA derivation + instruction builders for the three Anchor programs."
+
+[dependencies]
+solana-sdk = { workspace = true }
+solana-program = { workspace = true }
+spl-token = { workspace = true }
+spl-associated-token-account = { workspace = true }
+borsh = "1"
+anyhow = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }

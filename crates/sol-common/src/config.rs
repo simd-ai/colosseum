@@ -7,10 +7,18 @@ pub struct AppConfig {
     pub redis_url: String,
     pub solana_rpc_url: String,
     pub solana_ws_url: String,
+    /// Authority keypair — used by sol-client CLI when a client identity isn't
+    /// provided explicitly. Defaults to the standard Solana CLI keypair.
     pub authority_keypair_path: String,
+    /// Verifier authority keypair — the signer that approves on-chain receipt
+    /// submission and escrow release. Used by sol-relayer.
+    pub verifier_keypair_path: String,
+    /// Provider keypair — used by sol-agent for stable on-chain identity.
+    pub agent_keypair_path: String,
     pub provider_registry_program_id: String,
     pub job_escrow_program_id: String,
     pub compute_receipts_program_id: String,
+    /// Settlement token mint (tSIMD on devnet for the demo).
     pub grid_token_mint: String,
     pub grid_token_decimals: u8,
     pub scheduler_port: u16,
@@ -35,6 +43,10 @@ impl AppConfig {
                 .unwrap_or_else(|_| "wss://api.devnet.solana.com".into()),
             authority_keypair_path: std::env::var("AUTHORITY_KEYPAIR_PATH")
                 .unwrap_or_else(|_| "~/.config/solana/id.json".into()),
+            verifier_keypair_path: std::env::var("VERIFIER_KEYPAIR_PATH")
+                .unwrap_or_else(|_| "./data/verifier-keypair.json".into()),
+            agent_keypair_path: std::env::var("AGENT_KEYPAIR_PATH")
+                .unwrap_or_else(|_| "./data/agent-keypair.json".into()),
             provider_registry_program_id: std::env::var("PROVIDER_REGISTRY_PROGRAM_ID")
                 .unwrap_or_else(|_| "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS".into()),
             job_escrow_program_id: std::env::var("JOB_ESCROW_PROGRAM_ID")

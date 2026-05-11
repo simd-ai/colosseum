@@ -9,11 +9,14 @@ use crate::state::AppState;
 use crate::error::ApiError;
 
 /// POST /api/v1/providers/register
+///
+/// The agent submits `register_provider` to Solana itself (so it can pay rent
+/// from its own keypair), then POSTs here with the resulting tx signature.
+/// The scheduler stores both the off-chain row and the on-chain pointer.
 pub async fn register_provider(
     State(state): State<Arc<AppState>>,
     Json(req): Json<RegisterProviderRequest>,
 ) -> Result<Json<sol_db::ProviderRow>, ApiError> {
-    // Check if provider already exists
     if let Some(_existing) = sol_db::get_provider_by_pubkey(&state.pool, &req.pubkey).await? {
         return Err(ApiError::Conflict("Provider already registered".into()));
     }
@@ -28,22 +31,25 @@ pub async fn register_provider(
     )
     .await?;
 
-    // Enqueue on-chain registration via Redis
-    let tx_request = sol_common::TxRequest {
-        tx_type: sol_common::TxType::RegisterProvider,
-        reference_id: provider.id,
-        payload: serde_json::to_value(&req).unwrap_or_default(),
-    };
-    if let Ok(mut conn) = state.redis.get_multiplexed_async_connection().await {
-        let _: Result<(), _> = redis::AsyncCommands::lpush(
-            &mut conn,
-            "solgrid:tx_queue",
-            serde_json::to_string(&tx_request).unwrap_or_default(),
-        )
-        .await;
+    if let Some(tx) = &req.onchain_tx {
+        sol_db::update_provider_onchain_tx(&state.pool, provider.id, tx).await?;
+        tracing::info!(
+            "Provider registered: {} ({}) tx={}",
+            provider.name,
+            provider.pubkey,
+            tx
+        );
+    } else {
+        tracing::info!(
+            "Provider registered without on-chain tx: {} ({}) — agent should submit it",
+            provider.name,
+            provider.pubkey
+        );
     }
 
-    tracing::info!("Provider registered: {} ({})", provider.name, provider.pubkey);
+    let provider = sol_db::get_provider(&state.pool, provider.id)
+        .await?
+        .ok_or_else(|| ApiError::Internal("provider vanished after insert".into()))?;
     Ok(Json(provider))
 }
 
