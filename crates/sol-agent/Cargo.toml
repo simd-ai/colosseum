@@ -1,0 +1,28 @@
+[package]
+name = "sol-agent"
+version = "0.1.0"
+edition = "2021"
+description = "SolGrid Mock GPU Provider Agent — simulates compute providers"
+
+[[bin]]
+name = "sol-agent"
+path = "src/main.rs"
+
+[dependencies]
+sol-common = { path = "../sol-common" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+redis = { workspace = true }
+reqwest = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+rand = { workspace = true }
+hex = { workspace = true }
+bs58 = { workspace = true }
+tokio-stream = "0.1"

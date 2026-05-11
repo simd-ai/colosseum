@@ -1,0 +1,39 @@
+syntax = "proto3";
+package solgrid.provider;
+
+// Provider registration and management messages.
+
+message RegisterProviderRequest {
+  string pubkey = 1;
+  string name = 2;
+  string gpu_class = 3;
+  uint32 gpu_count = 4;
+  uint64 max_scu_per_epoch = 5;
+}
+
+message ProviderInfo {
+  string id = 1;
+  string pubkey = 2;
+  string name = 3;
+  string gpu_class = 4;
+  uint32 gpu_count = 5;
+  uint64 max_scu_per_epoch = 6;
+  ProviderStatus status = 7;
+  uint64 total_jobs_completed = 8;
+  uint64 total_scu_delivered = 9;
+  string onchain_tx = 10;
+  string created_at = 11;
+}
+
+enum ProviderStatus {
+  PROVIDER_STATUS_UNSPECIFIED = 0;
+  PROVIDER_STATUS_ACTIVE = 1;
+  PROVIDER_STATUS_INACTIVE = 2;
+  PROVIDER_STATUS_SUSPENDED = 3;
+}
+
+message ListProvidersRequest {}
+
+message ListProvidersResponse {
+  repeated ProviderInfo providers = 1;
+}

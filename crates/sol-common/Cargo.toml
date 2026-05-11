@@ -1,0 +1,20 @@
+[package]
+name = "sol-common"
+version = "0.1.0"
+edition = "2021"
+description = "SolGrid shared types, crypto helpers, and configuration"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+rand = { workspace = true }
+bs58 = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+dotenvy = { workspace = true }
+tracing = { workspace = true }

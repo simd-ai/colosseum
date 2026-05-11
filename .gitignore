@@ -1,0 +1,25 @@
+# Rust
+target/
+**/*.rs.bk
+
+# Anchor
+.anchor/
+
+# Node
+node_modules/
+.next/
+frontend/.next/
+frontend/node_modules/
+
+# Env
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Test
+test-ledger/

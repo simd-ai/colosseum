@@ -1,0 +1,53 @@
+syntax = "proto3";
+package solgrid.receipt;
+
+// Compute receipt messages for verification and on-chain submission.
+
+message ComputeReceipt {
+  bytes job_id = 1;
+  string provider_pubkey = 2;
+  string gpu_class = 3;
+  uint32 gpu_count = 4;
+  uint32 execution_duration_sec = 5;
+  uint64 scu_amount = 6;
+  bytes result_hash = 7;
+  bytes provider_signature = 8;
+}
+
+message VerificationRequest {
+  ComputeReceipt receipt = 1;
+  JobInfo job = 2;
+}
+
+message VerificationResult {
+  bool approved = 1;
+  string verifier_signature = 2;
+  string reason = 3;
+}
+
+message JobInfo {
+  string id = 1;
+  string client_pubkey = 2;
+  string provider_id = 3;
+  string gpu_class = 4;
+  uint32 gpu_count = 5;
+  uint32 max_duration_sec = 6;
+  uint64 budget_scu = 7;
+  string status = 8;
+}
+
+message ReceiptInfo {
+  string id = 1;
+  string job_id = 2;
+  string provider_pubkey = 3;
+  string gpu_class = 4;
+  uint32 gpu_count = 5;
+  uint32 execution_duration_sec = 6;
+  uint64 scu_amount = 7;
+  string result_hash = 8;
+  string provider_signature = 9;
+  bool verified = 10;
+  string verifier_pubkey = 11;
+  string onchain_tx = 12;
+  string created_at = 13;
+}

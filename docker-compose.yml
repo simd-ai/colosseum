@@ -1,0 +1,113 @@
+version: "3.8"
+
+services:
+  # ─── Data Layer ────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: solgrid-postgres
+    environment:
+      POSTGRES_USER: solgrid
+      POSTGRES_PASSWORD: solgrid
+      POSTGRES_DB: solgrid
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./crates/sol-db/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U solgrid"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: solgrid-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Backend Services ─────────────────────────────────────────────
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scheduler
+    container_name: solgrid-scheduler
+    environment:
+      DATABASE_URL: postgres://solgrid:solgrid@postgres:5432/solgrid
+      REDIS_URL: redis://redis:6379
+      SOLANA_RPC_URL: https://api.devnet.solana.com
+      SCHEDULER_PORT: "8080"
+      VERIFIER_URL: http://verifier:8081
+      RUST_LOG: sol_scheduler=debug,tower_http=info
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  verifier:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.verifier
+    container_name: solgrid-verifier
+    environment:
+      DATABASE_URL: postgres://solgrid:solgrid@postgres:5432/solgrid
+      VERIFIER_PORT: "8081"
+      RUST_LOG: sol_verifier=debug,tower_http=info
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  relayer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.relayer
+    container_name: solgrid-relayer
+    environment:
+      DATABASE_URL: postgres://solgrid:solgrid@postgres:5432/solgrid
+      REDIS_URL: redis://redis:6379
+      SOLANA_RPC_URL: https://api.devnet.solana.com
+      RUST_LOG: sol_relayer=debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    container_name: solgrid-agent
+    environment:
+      REDIS_URL: redis://redis:6379
+      SCHEDULER_URL: http://scheduler:8080
+      RUST_LOG: sol_agent=debug
+    depends_on:
+      - scheduler
+      - redis
+
+  # ─── Frontend ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: solgrid-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - scheduler
+
+volumes:
+  postgres_data:
