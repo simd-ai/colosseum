@@ -40,8 +40,19 @@ ok "deployer = $DEPLOYER"
 
 BAL_LAMPORTS=$(solana balance --lamports | awk '{print $1}')
 if [ "$BAL_LAMPORTS" -lt 2000000000 ]; then
-  info "Airdropping 2 SOL to deployer..."
-  solana airdrop 2 || info "Airdrop may be rate-limited — retry later if balance is still 0."
+  # The `solana airdrop` RPC is heavily rate-limited on devnet and almost
+  # always fails, so route the user through the web faucet instead.
+  info "Deployer needs ≥ 2 SOL. Fund it manually via the web faucet:"
+  info "  1) Open https://faucet.solana.com/"
+  info "  2) Request 2 SOL to: $DEPLOYER"
+  info "Waiting for balance to reach 2 SOL (polling every 5s, Ctrl-C to abort)..."
+  while :; do
+    BAL_LAMPORTS=$(solana balance --lamports | awk '{print $1}')
+    if [ "$BAL_LAMPORTS" -ge 2000000000 ]; then
+      break
+    fi
+    sleep 5
+  done
 fi
 solana balance
 
@@ -91,7 +102,12 @@ upsert COMPUTE_RECEIPTS_PROGRAM_ID  "$COMPUTE_RECEIPTS_ID"  "$ENV_FILE"
 # ── 6. tSIMD mint + client wallet ─────────────────────────────────────
 step "Creating tSIMD mint"
 cargo run -q -p sol-client -- keygen >/dev/null
-cargo run -q -p sol-client -- airdrop --amount-sol 1 || true
+# Devnet's airdrop RPC is rate-limited; fund the demo client from the
+# deployer (already topped up via the web faucet above) instead.
+CLIENT_PUBKEY="$(solana-keygen pubkey "$DATA_DIR/client-keypair.json")"
+info "Funding demo client ($CLIENT_PUBKEY) with 1 SOL from deployer..."
+solana transfer "$CLIENT_PUBKEY" 1 --allow-unfunded-recipient \
+  --keypair ~/.config/solana/id.json >/dev/null
 MINT_OUTPUT="$(cargo run -q -p sol-client -- setup-mint --decimals 6)"
 echo "$MINT_OUTPUT"
 MINT_ADDR=$(echo "$MINT_OUTPUT" | grep -m1 '^mint:' | awk '{print $2}')
