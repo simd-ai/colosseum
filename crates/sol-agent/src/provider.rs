@@ -103,8 +103,56 @@ impl ProviderIdentity {
                 Ok(())
             }
             Err(e) => {
-                tracing::warn!("Airdrop failed (not on devnet?): {}", e);
-                Ok(())
+                tracing::warn!("Airdrop failed: {}. Falling back to manual funding.", e);
+                self.wait_for_manual_funding().await
+            }
+        }
+    }
+
+    /// Print funding instructions for the agent's pubkey and poll the RPC
+    /// until the balance crosses `MIN_BALANCE_LAMPORTS`. Used when the
+    /// devnet airdrop RPC is rate-limited and we need the operator to top
+    /// up the wallet manually.
+    async fn wait_for_manual_funding(&self) -> Result<()> {
+        let pubkey = self.pubkey();
+        let needed_sol = MIN_BALANCE_LAMPORTS as f64 / LAMPORTS_PER_SOL as f64;
+        eprintln!();
+        eprintln!("──────────────────────────────────────────────────────────────");
+        eprintln!("  Agent wallet needs ≥ {:.2} SOL to register on-chain.", needed_sol);
+        eprintln!("  Fund this address (any of the methods below works):");
+        eprintln!();
+        eprintln!("    {}", pubkey);
+        eprintln!();
+        eprintln!("  Options:");
+        eprintln!("    • Web faucet:  https://faucet.solana.com/  (paste address)");
+        eprintln!("    • From deployer:");
+        eprintln!("        solana transfer {} 0.2 \\", pubkey);
+        eprintln!("          --allow-unfunded-recipient \\");
+        eprintln!("          --keypair ~/.config/solana/id.json");
+        eprintln!("    • PoW faucet:  devnet-pow mine -d 3 --reward 0.02 \\");
+        eprintln!("                     --no-infer -t 200000000");
+        eprintln!();
+        eprintln!("  Waiting for balance to reach {:.2} SOL (polling every 5s, Ctrl-C to abort)...", needed_sol);
+        eprintln!("──────────────────────────────────────────────────────────────");
+        eprintln!();
+
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            match self.rpc.get_balance(&pubkey).await {
+                Ok(bal) if bal >= MIN_BALANCE_LAMPORTS => {
+                    tracing::info!(
+                        "Agent funded: {:.4} SOL",
+                        bal as f64 / LAMPORTS_PER_SOL as f64
+                    );
+                    return Ok(());
+                }
+                Ok(bal) => {
+                    tracing::debug!(
+                        "Still waiting — agent balance {:.4} SOL",
+                        bal as f64 / LAMPORTS_PER_SOL as f64
+                    );
+                }
+                Err(e) => tracing::warn!("RPC get_balance failed: {}", e),
             }
         }
     }

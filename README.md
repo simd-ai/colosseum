@@ -235,8 +235,9 @@ Re-running is safe — every step is idempotent.
 # Data layer
 docker compose up -d postgres redis
 
-# Apply schema
-psql "$DATABASE_URL" -f crates/sol-db/migrations/001_initial.sql
+# Apply schema (runs psql inside the postgres container; no local psql needed)
+docker compose exec -T postgres psql -U solgrid -d solgrid \
+  < crates/sol-db/migrations/001_initial.sql
 
 # Backend services (in separate panes / tmux)
 cargo run -p sol-scheduler

@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ─── Providers ──────────────────────────────────────────────────────
 
-CREATE TABLE providers (
+CREATE TABLE IF NOT EXISTS providers (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pubkey      VARCHAR(44) UNIQUE NOT NULL,
     name        VARCHAR(64) NOT NULL,
@@ -21,12 +21,12 @@ CREATE TABLE providers (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_providers_status ON providers(status);
-CREATE INDEX idx_providers_gpu_class ON providers(gpu_class);
+CREATE INDEX IF NOT EXISTS idx_providers_status ON providers(status);
+CREATE INDEX IF NOT EXISTS idx_providers_gpu_class ON providers(gpu_class);
 
 -- ─── Jobs ───────────────────────────────────────────────────────────
 
-CREATE TABLE jobs (
+CREATE TABLE IF NOT EXISTS jobs (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_pubkey   VARCHAR(44) NOT NULL,
     provider_id     UUID REFERENCES providers(id),
@@ -43,13 +43,13 @@ CREATE TABLE jobs (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_jobs_status ON jobs(status);
-CREATE INDEX idx_jobs_provider ON jobs(provider_id);
-CREATE INDEX idx_jobs_client ON jobs(client_pubkey);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+CREATE INDEX IF NOT EXISTS idx_jobs_provider ON jobs(provider_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_client ON jobs(client_pubkey);
 
 -- ─── Compute Receipts ───────────────────────────────────────────────
 
-CREATE TABLE compute_receipts (
+CREATE TABLE IF NOT EXISTS compute_receipts (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id                  UUID REFERENCES jobs(id) NOT NULL UNIQUE,
     provider_pubkey         VARCHAR(44) NOT NULL,
@@ -66,12 +66,12 @@ CREATE TABLE compute_receipts (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_receipts_job ON compute_receipts(job_id);
-CREATE INDEX idx_receipts_verified ON compute_receipts(verified);
+CREATE INDEX IF NOT EXISTS idx_receipts_job ON compute_receipts(job_id);
+CREATE INDEX IF NOT EXISTS idx_receipts_verified ON compute_receipts(verified);
 
 -- ─── Transaction Log ────────────────────────────────────────────────
 
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tx_hash         VARCHAR(88) NOT NULL,
     tx_type         VARCHAR(32) NOT NULL,
@@ -83,6 +83,6 @@ CREATE TABLE transactions (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_tx_status ON transactions(status);
-CREATE INDEX idx_tx_reference ON transactions(reference_id);
-CREATE INDEX idx_tx_hash ON transactions(tx_hash);
+CREATE INDEX IF NOT EXISTS idx_tx_status ON transactions(status);
+CREATE INDEX IF NOT EXISTS idx_tx_reference ON transactions(reference_id);
+CREATE INDEX IF NOT EXISTS idx_tx_hash ON transactions(tx_hash);

@@ -345,10 +345,13 @@ pub async fn get_dashboard_stats(pool: &PgPool) -> Result<sol_common::DashboardS
         sqlx::query_as("SELECT COUNT(*) FROM jobs WHERE status = 'settled'")
             .fetch_one(pool)
             .await?;
-    let total_scu: (Option<i64>,) =
-        sqlx::query_as("SELECT SUM(scu_amount) FROM compute_receipts WHERE verified = TRUE")
-            .fetch_one(pool)
-            .await?;
+    // Postgres widens SUM(BIGINT) to NUMERIC; cast back to BIGINT so sqlx can
+    // decode as i64. COALESCE handles the empty-table case (SUM returns NULL).
+    let total_scu: (i64,) = sqlx::query_as(
+        "SELECT COALESCE(SUM(scu_amount), 0)::BIGINT FROM compute_receipts WHERE verified = TRUE",
+    )
+    .fetch_one(pool)
+    .await?;
     let total_receipts: (i64,) =
         sqlx::query_as("SELECT COUNT(*) FROM compute_receipts")
             .fetch_one(pool)
@@ -364,7 +367,7 @@ pub async fn get_dashboard_stats(pool: &PgPool) -> Result<sol_common::DashboardS
         total_jobs: total_jobs.0,
         active_jobs: active_jobs.0,
         settled_jobs: settled_jobs.0,
-        total_scu_settled: total_scu.0.unwrap_or(0),
+        total_scu_settled: total_scu.0,
         total_receipts: total_receipts.0,
         verified_receipts: verified_receipts.0,
     })
