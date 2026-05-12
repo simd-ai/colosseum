@@ -6,7 +6,7 @@ pub mod errors;
 
 use instructions::*;
 
-declare_id!("HmbTLCmaGtYhSsT3D2RzKFkN3CKqZbHN4KxrFEhMccgH");
+declare_id!("5yCy1zqLYQh6u9NjCFU9mQSfR2RinzUA9TdLSkj5TYeu");
 
 #[program]
 pub mod job_escrow {

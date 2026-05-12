@@ -6,7 +6,7 @@ pub mod errors;
 
 use instructions::*;
 
-declare_id!("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+declare_id!("9FepBzPkktCH9RsdfCkdzDCSVnyosA66eDbWyWdjoVSR");
 
 #[program]
 pub mod compute_receipts {
